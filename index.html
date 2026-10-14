@@ -3,13 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Sinif Portalı - WhatsApp Pro (Online Gmail)</title>
-  
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
+  <title>Sinif Portalı - WhatsApp Pro</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     body { 
@@ -35,9 +29,11 @@
     .section { display: none; flex: 1; flex-direction: column; background: #1e293b; border-radius: 12px; border: 1px solid #334155; overflow: hidden; }
     .section.active { display: flex; }
 
+    /* Üzvlər / Şəxsi Çat Siyahısı */
     .users-list-content { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #0b1329; flex: 1; }
     .user-item-box { background: #1e293b; padding: 10px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid #334155; }
 
+    /* Çat Bölməsi */
     .chat-messages { flex: 1; padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; background: #0b1329; }
     .message { background: #1e293b; padding: 8px 12px; border-radius: 8px; max-width: 85%; word-break: break-word; font-size: 13px; }
     .message.mine { background: #0284c7; align-self: flex-end; }
@@ -52,6 +48,7 @@
 
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
+    /* Cədvəl Bölməsi */
     .schedule-content { padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
     .day-card { background: #0f172a; padding: 12px; border-radius: 8px; border-left: 4px solid #38bdf8; }
     .day-card h3 { color: #38bdf8; margin-bottom: 6px; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
@@ -59,44 +56,57 @@
     .day-card li { padding: 3px 0; font-size: 12px; color: #cbd5e1; border-bottom: 1px solid #1e293b; }
     .edit-sched-btn { background: #334155; color: #38bdf8; border: none; padding: 3px 6px; border-radius: 4px; cursor: pointer; font-size: 10px; }
 
+    /* Səsli Zəng */
     .call-content { padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; text-align: center; flex: 1; }
     .call-btn { padding: 12px 25px; background: #22c55e; color: white; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; }
     .hangup-btn { padding: 12px 25px; background: #ef4444; color: white; border: none; border-radius: 25px; font-size: 14px; font-weight: bold; cursor: pointer; }
 
+    /* Modallar */
     .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-box { background: #1e293b; padding: 22px; border-radius: 14px; border: 1px solid #334155; width: 330px; text-align: center; display: flex; flex-direction: column; gap: 12px; }
     .modal-box h2 { color: #38bdf8; font-size: 18px; }
-    .modal-box select { padding: 10px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; outline: none; font-size: 13px; }
-    .google-login-btn { background: #f8fafc; color: #0f172a; font-weight: bold; padding: 12px; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+    .modal-box input, .modal-box select { padding: 10px; background: #0f172a; border: 1px solid #475569; color: white; border-radius: 8px; outline: none; font-size: 13px; }
+    .modal-box button { padding: 10px; background: #38bdf8; color: #0f172a; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 
     .user-list-item { display: flex; flex-direction: column; gap: 4px; font-size: 12px; background: #0f172a; padding: 8px; border-radius: 6px; margin-bottom: 6px; text-align: left; }
     .admin-actions { display: flex; gap: 4px; flex-wrap: wrap; }
     .action-btn { background: #ef4444; color: white; border: none; padding: 4px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; }
+    .mute-btn { background: #f59e0b; }
+    .login-btn { background: #3b82f6; }
+    .unmute-btn { background: #10b981; }
   </style>
 </head>
 <body>
 
+  <!-- Audio fayllar -->
   <audio id="sound-whatsapp" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" preload="auto"></audio>
   <audio id="sound-beep" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3" preload="auto"></audio>
   <audio id="sound-ring" src="https://assets.mixkit.co/active_storage/sfx/1360/1360-preview.mp3" preload="auto"></audio>
 
-  <!-- Giriş Modalı -->
+  <!-- Giriş Modalı (Əgər istifadəçi yoxdursa dərhal görünür) -->
   <div id="login-modal" class="modal" style="display:flex;">
     <div class="modal-box">
       <h2>Sinif Portalına Giriş</h2>
-      <p style="font-size: 12px; color: #94a3b8;">Davam etmək üçün Google hesabınızla daxil olun:</p>
-      <button class="google-login-btn" onclick="loginWithGoogle()">
-        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.8 7.3l3.7 2.9C6.4 7.2 9 5 12 5z"/><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/><path fill="#FBBC05" d="M5.5 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.8 7.3C.7 9.5 0 10.7 0 12s.7 2.5 1.8 4.7l3.7-2.9z"/><path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.6-2.2-6.5-5.2L1.8 16c1.9 3.7 5.7 7 10.2 7z"/></svg>
-        Google ilə Giriş Et
-      </button>
+      <p style="font-size: 12px; color: #94a3b8;">Zəhmət olmasa adınızı daxil edin:</p>
+      <input type="text" id="username-input" placeholder="Məsələn: Nihad" autocomplete="off">
+      <button onclick="loginUser()">Daxil ol</button>
     </div>
   </div>
 
-  <!-- Parametrlər Modalı -->
+  <!-- Parametrlər (Ayarlar) Modalı -->
   <div id="settings-modal" class="modal" style="display:none;">
     <div class="modal-box">
       <h2>⚙️ Parametrlər</h2>
+      
       <div style="text-align: left; font-size: 12px; display: flex; flex-direction: column; gap: 10px;">
+        <div>
+          <label style="color:#cbd5e1;">İstifadəçi Adı:</label>
+          <div style="display:flex; gap:6px; margin-top:4px;">
+            <input type="text" id="edit-name-input" style="flex:1;">
+            <button onclick="changeName()" style="padding:6px 10px; font-size:11px;">Dəyiş</button>
+          </div>
+        </div>
+
         <div>
           <label style="color:#cbd5e1;">Bildiriş Səsi Seçimi:</label>
           <select id="sound-select" onchange="changeSoundChoice()" style="width:100%; margin-top:4px;">
@@ -106,10 +116,12 @@
             <option value="none">Səssiz 🔇</option>
           </select>
         </div>
+
         <hr style="border:0.5px solid #334155; margin: 5px 0;">
+
         <button onclick="openAdminModalFromSettings()" style="background:#ef4444; color:white; font-size:12px;">👑 Admin Paneline Giriş (Şifrəli)</button>
-        <button onclick="logoutGoogle()" style="background:#475569; color:white; font-size:12px;">Çıxış Et 🚪</button>
       </div>
+
       <button onclick="document.getElementById('settings-modal').style.display='none'" style="background:#475569; color:white; margin-top:5px;">Bağla</button>
     </div>
   </div>
@@ -118,7 +130,7 @@
   <div id="admin-modal" class="modal" style="display:none;">
     <div class="modal-box" style="width: 360px;">
       <h2>👑 Nihadın Admin Paneli</h2>
-      <p style="font-size: 11px; color: #f87171;">İdarəetmə:</p>
+      <p style="font-size: 11px; color: #f87171;">İdarəetmə və Cəzalandırma:</p>
       <div id="admin-users-container" style="max-height: 250px; overflow-y: auto;"></div>
       <button onclick="document.getElementById('admin-modal').style.display='none'">Bağla</button>
     </div>
@@ -174,28 +186,18 @@
   </div>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "SENIN_FIREBASE_API_KEY",
-      authDomain: "SENIN_PROEKT.firebaseapp.com",
-      databaseURL: "https://SENIN_PROEKT-default-rtdb.firebaseio.com",
-      projectId: "SENIN_PROEKT",
-      storageBucket: "SENIN_PROEKT.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-    const db = firebase.database();
-
-    let currentUser = "";
+    let currentUser = localStorage.getItem('portal_current_user') || "";
     let isUserAdmin = false;
     let currentPrivateTarget = null;
     let selectedSound = localStorage.getItem('portal_sound') || "whatsapp";
     
-    let activeUsers = [];
-    let chatHistory = [];
-    let scheduleData = {
+    let activeUsers = JSON.parse(localStorage.getItem('portal_users')) || ["Nihad", "Orxan", "Leyla", "Elmir"];
+    let kickedUsers = JSON.parse(localStorage.getItem('portal_kicked')) || [];
+    let mutedDict = JSON.parse(localStorage.getItem('portal_muted')) || {};
+    let chatHistory = JSON.parse(localStorage.getItem('portal_chats')) || [];
+    let privateChats = JSON.parse(localStorage.getItem('portal_private_chats')) || {};
+    
+    let scheduleData = JSON.parse(localStorage.getItem('portal_schedule')) || {
       bazar1: ["Azərbaycan Dili", "Riyaziyyat", "Fizika"],
       bazar2: ["Kimya", "İngilis Dili", "Tarix"],
       bazar3: ["Ədəbiyyat", "Biologiya", "Coğrafiya"],
@@ -207,34 +209,20 @@
     let audioChunks = [];
     let isRecording = false;
 
-    // Yönləndirmə nəticəsini yoxlayırıq
-    auth.getRedirectResult().catch(error => {
-      console.log(error.message);
-    });
-
-    auth.onAuthStateChanged(user => {
-      if (user) {
-        currentUser = user.displayName || user.email.split('@')[0];
+    window.onload = function() {
+      if(currentUser) {
+        if(kickedUsers.includes(currentUser)) {
+          localStorage.removeItem('portal_current_user');
+          currentUser = "";
+          document.getElementById('login-modal').style.display = 'flex';
+          return;
+        }
         document.getElementById('login-modal').style.display = 'none';
         initApp();
       } else {
         document.getElementById('login-modal').style.display = 'flex';
       }
-    });
-
-    function loginWithGoogle() {
-      const provider = new firebase.auth.GoogleAuthProvider();
-      // Mobil tətbiqlərdə pop-up bloklandığı üçün signInWithRedirect istifadə edirik
-      auth.signInWithRedirect(provider).catch(error => {
-        alert("Giriş zamanı xəta baş verdi: " + error.message);
-      });
-    }
-
-    function logoutGoogle() {
-      auth.signOut().then(() => {
-        location.reload();
-      });
-    }
+    };
 
     function playSound() {
       if(selectedSound === "none") return;
@@ -246,32 +234,39 @@
       }
     }
 
+    function loginUser() {
+      const input = document.getElementById('username-input').value.trim();
+      if(input === "") { alert("Zəhmət olmasa adınızı daxil edin!"); return; }
+      currentUser = input;
+
+      if(kickedUsers.includes(currentUser)) {
+        alert("Siz bu qrupdan kənarlaşdırılmısınız!");
+        return;
+      }
+
+      localStorage.setItem('portal_current_user', currentUser);
+      document.getElementById('login-modal').style.display = 'none';
+      initApp();
+
+      if(chatHistory.length === 0) {
+        chatHistory.push({ id: Date.now(), sender: "Sistem", type: 'text', content: "Salam " + currentUser + "! WhatsApp stil qrupumuza xoş gəldiniz." });
+        saveState();
+        renderChatHistory();
+      }
+    }
+
     function initApp() {
       checkAdminStatus();
+      if(!activeUsers.includes(currentUser)) activeUsers.push(currentUser);
+      saveState();
 
-      db.ref('chats').on('value', snapshot => {
-        chatHistory = snapshot.val() || [];
-        renderChatHistory();
-      });
-
-      db.ref('users').on('value', snapshot => {
-        activeUsers = snapshot.val() || [];
-        if(!activeUsers.includes(currentUser)) {
-          activeUsers.push(currentUser);
-          db.ref('users').set(activeUsers);
-        }
-        renderUsersList();
-      });
-
-      db.ref('schedule').on('value', snapshot => {
-        let data = snapshot.val();
-        if(data) scheduleData = data;
-        renderSchedule();
-      });
+      renderChatHistory();
+      renderSchedule();
+      renderUsersList();
     }
 
     function checkAdminStatus() {
-      if(currentUser.toLowerCase().includes("nihad")) {
+      if(currentUser.toLowerCase() === "nihad") {
         isUserAdmin = true;
         document.getElementById('admin-badge').style.display = "inline-block";
       } else {
@@ -279,6 +274,17 @@
         document.getElementById('admin-badge').style.display = "none";
       }
       document.getElementById('display-user').innerText = currentUser;
+    }
+
+    function saveState() {
+      localStorage.setItem('portal_current_user', currentUser);
+      localStorage.setItem('portal_users', JSON.stringify(activeUsers));
+      localStorage.setItem('portal_kicked', JSON.stringify(kickedUsers));
+      localStorage.setItem('portal_muted', JSON.stringify(mutedDict));
+      localStorage.setItem('portal_chats', JSON.stringify(chatHistory));
+      localStorage.setItem('portal_private_chats', JSON.stringify(privateChats));
+      localStorage.setItem('portal_schedule', JSON.stringify(scheduleData));
+      localStorage.setItem('portal_sound', selectedSound);
     }
 
     function switchTab(tabName, btn) {
@@ -289,236 +295,3 @@
         currentPrivateTarget = null;
         document.getElementById('header-title').innerText = "🎓 Sinifimiz (Qrup Çatı)";
         document.getElementById('chat-section').classList.add('active');
-        renderChatHistory();
-      } else if(tabName === 'users') {
-        document.getElementById('users-section').classList.add('active');
-        renderUsersList();
-      } else if(tabName === 'schedule') {
-        document.getElementById('schedule-section').classList.add('active');
-      } else if(tabName === 'call') {
-        document.getElementById('call-section').classList.add('active');
-      }
-      btn.classList.add('active');
-    }
-
-    function openSettings() {
-      document.getElementById('sound-select').value = selectedSound;
-      document.getElementById('settings-modal').style.display = 'flex';
-    }
-
-    function changeSoundChoice() {
-      selectedSound = document.getElementById('sound-select').value;
-      localStorage.setItem('portal_sound', selectedSound);
-      playSound();
-    }
-
-    function openAdminModalFromSettings() {
-      document.getElementById('settings-modal').style.display = 'none';
-      openAdminPanel();
-    }
-
-    function openPrivateChat(targetUser) {
-      if(targetUser === currentUser) { alert("Özünüzə şəxsi mesaj yaza bilməzsiniz!"); return; }
-      currentPrivateTarget = targetUser;
-      document.getElementById('header-title').innerText = "💬 Şəxsi: " + targetUser;
-      document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('chat-section').classList.add('active');
-      document.getElementById('tab-chat-btn').classList.add('active');
-      renderChatHistory();
-    }
-
-    function backToGroupChat() {
-      if(currentPrivateTarget) {
-        currentPrivateTarget = null;
-        document.getElementById('header-title').innerText = "🎓 Sinifimiz (Qrup Çatı)";
-        renderChatHistory();
-      }
-    }
-
-    async function toggleRecordAudio() {
-      const micBtn = document.getElementById('mic-btn');
-      if(!isRecording) {
-        try {
-          let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          mediaRecorder = new MediaRecorder(stream);
-          audioChunks = [];
-          mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
-          mediaRecorder.onstop = () => {
-            let audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-            let reader = new FileReader();
-            reader.readAsDataURL(audioBlob);
-            reader.onloadend = function() {
-              sendAudioMessage(reader.result);
-            }
-            stream.getTracks().forEach(track => track.stop());
-          };
-          mediaRecorder.start();
-          isRecording = true;
-          micBtn.classList.add('recording');
-          micBtn.innerText = "⏹️";
-        } catch(err) {
-          alert("Mikrofona giriş icazəsi verilmədi!");
-        }
-      } else {
-        if(mediaRecorder) mediaRecorder.stop();
-        isRecording = false;
-        micBtn.classList.remove('recording');
-        micBtn.innerText = "🎤";
-      }
-    }
-
-    function sendAudioMessage(audioBase64) {
-      let msgObj = { id: Date.now(), sender: currentUser, type: 'audio', content: audioBase64 };
-      chatHistory.push(msgObj);
-      db.ref('chats').set(chatHistory);
-      playSound();
-    }
-
-    function sendMessage() {
-      const input = document.getElementById('msg-input');
-      const text = input.value.trim();
-      if(text === "") return;
-
-      let msgObj = { id: Date.now(), sender: currentUser, type: 'text', content: text };
-      chatHistory.push(msgObj);
-      db.ref('chats').set(chatHistory);
-
-      input.value = "";
-      playSound();
-    }
-
-    function checkEnter(e) { if(e.key === 'Enter') sendMessage(); }
-
-    function addMessageToUI(msgObj) {
-      const chatBox = document.getElementById('chat-messages');
-      const msgDiv = document.createElement('div');
-      const isMine = (msgObj.sender === currentUser);
-      msgDiv.className = "message" + (isMine ? " mine" : "");
-      msgDiv.id = "msg-" + msgObj.id;
-      
-      let deleteBtnHTML = (isUserAdmin || isMine) ? `<button class="del-btn" onclick="deleteMessage(${msgObj.id})">[Sil]</button>` : "";
-
-      let contentHTML = "";
-      if(msgObj.type === 'audio') {
-        contentHTML = `<audio controls src="${msgObj.content}" style="max-width:200px; height:35px;"></audio>`;
-      } else {
-        contentHTML = `<div class="text">${msgObj.content}</div>`;
-      }
-
-      msgDiv.innerHTML = `
-        <div class="sender"><span>${msgObj.sender}</span> ${deleteBtnHTML}</div>
-        ${contentHTML}
-      `;
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function renderChatHistory() {
-      document.getElementById('chat-messages').innerHTML = "";
-      chatHistory.forEach(msg => addMessageToUI(msg));
-    }
-
-    function renderUsersList() {
-      const container = document.getElementById('users-list-container');
-      container.innerHTML = "<b style='color:#38bdf8; font-size:12px;'>Aktiv Üzvlər:</b>";
-      
-      activeUsers.forEach(user => {
-        if(user === currentUser) return;
-        let div = document.createElement('div');
-        div.className = "user-item-box";
-        div.innerHTML = `
-          <div><b>👤 ${user}</b></div>
-          <button style="background:#38bdf8; color:#0f172a; border:none; padding:4px 8px; border-radius:4px; font-weight:bold; font-size:11px; cursor:pointer;">Mesaj Yaz 💬</button>
-        `;
-        div.onclick = () => openPrivateChat(user);
-        container.appendChild(div);
-      });
-    }
-
-    function deleteMessage(id) {
-      chatHistory = chatHistory.filter(m => m.id !== id);
-      db.ref('chats').set(chatHistory);
-    }
-
-    function startCall() {
-      playSound();
-      document.getElementById('call-status-title').innerText = "📞 Zəng Edilir...";
-      document.getElementById('call-status-desc').innerText = "Qrup üzvləri ilə canlı bağlantı qurulur.";
-      document.getElementById('call-actions-div').innerHTML = `
-        <button class="call-btn" onclick="acceptCall()">Cavab Ver 📞</button>
-        <button class="hangup-btn" onclick="endCall()">Adboy ❌</button>
-      `;
-    }
-
-    function acceptCall() {
-      document.getElementById('call-status-title').innerText = "🎙️ Danışıq Getdir (Canlı)";
-      document.getElementById('call-status-desc').innerText = "Səsli konfrans aktivdir.";
-      document.getElementById('call-actions-div').innerHTML = `
-        <button class="hangup-btn" onclick="endCall()">Zəngi Bitir ❌</button>
-      `;
-    }
-
-    function endCall() {
-      document.getElementById('call-status-title').innerText = "Sinif Səsli Konfransı";
-      document.getElementById('call-status-desc').innerText = "Zəng sona çatdı.";
-      document.getElementById('call-actions-div').innerHTML = `
-        <button class="call-btn" onclick="startCall()">Zəng Et 🎙️</button>
-      `;
-    }
-
-    function openAdminPanel() {
-      const code = prompt("Admin şifrəsini daxil edin:");
-      if(code === "Nihad1581") {
-        isUserAdmin = true;
-        document.getElementById('admin-badge').style.display = "inline-block";
-        renderAdminUsers();
-        document.getElementById('admin-modal').style.display = 'flex';
-      } else if(code !== null) {
-        alert("Yanlış şifrə!");
-      }
-    }
-
-    function renderAdminUsers() {
-      const container = document.getElementById('admin-users-container');
-      container.innerHTML = "";
-      activeUsers.forEach(user => {
-        let div = document.createElement('div');
-        div.className = "user-list-item";
-        div.innerHTML = `<div><b>👤 ${user}</b></div>`;
-        container.appendChild(div);
-      });
-    }
-
-    function renderSchedule() {
-      const container = document.getElementById('schedule-container');
-      container.innerHTML = "";
-      const days = { bazar1: "Bazar ertəsi", bazar2: "Çərşənbə axşamı", bazar3: "Çərşənbə", bazar4: "Cümə axşamı", bazar5: "Cümə" };
-
-      for(let key in days) {
-        let card = document.createElement('div');
-        card.className = "day-card";
-        let subjs = scheduleData[key].map((s, i) => `<li>${i+1}. ${s}</li>`).join('');
-        card.innerHTML = `
-          <h3>${days[key]} <button class="edit-sched-btn" onclick="editSchedule('${key}')">Redaktə</button></h3>
-          <ul>${subjs}</ul>
-        `;
-        container.appendChild(card);
-      }
-    }
-
-    function editSchedule(dayKey) {
-      if(!isUserAdmin) {
-        const code = prompt("Admin şifrəsini daxil edin:");
-        if(code !== "Nihad1581") { alert("İcazə verilmədi!"); return; }
-        isUserAdmin = true;
-      }
-      const newSubject = prompt("Yeni dərsi daxil edin:");
-      if(newSubject) {
-        scheduleData[dayKey].push(newSubject);
-        db.ref('schedule').set(scheduleData);
-      }
-    }
-  </script>
-</body>
-</html>
